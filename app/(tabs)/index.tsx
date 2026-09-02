@@ -1,98 +1,125 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type CounterProps = {
+  incrementValue?: number;
+};
 
-export default function HomeScreen() {
+export default function CounterApp({
+  incrementValue = 1,
+}: CounterProps) {
+
+  // useState for the counter value
+  const [count, setCount] = useState(0);
+
+  // Event handler for Increase
+  const increase = () => {
+    setCount(count + incrementValue);
+  };
+
+  // Event handler for Decrease
+  const decrease = () => {
+    // Prevent going below zero
+    setCount(Math.max(0, count - incrementValue));
+  };
+
+  // Event handler for Reset
+  const reset = () => {
+    setCount(0);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <Text style={styles.title}>Counter App</Text>
+
+      {/* Display current counter value */}
+      <View style={styles.counterBox}>
+        <Text style={styles.counter}>{count}</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+
+        <Pressable
+          style={styles.increaseButton}
+          onPress={increase}
+        >
+          <Text style={styles.buttonText}>Increase</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.decreaseButton}
+          onPress={decrease}
+        >
+          <Text style={styles.buttonText}>Decrease</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.resetButton}
+          onPress={reset}
+        >
+          <Text style={styles.buttonText}>Reset</Text>
+        </Pressable>
+
+      </View>
+
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: 'white',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    marginBottom: 30,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  counterBox: {
+    width: 250,
+    height: 150,
+    borderWidth: 2,
+    borderColor: 'gray',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+
+  counter: {
+    fontSize: 60,
+    fontWeight: 'bold',
+  },
+
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  increaseButton: {
+    backgroundColor: 'lightgreen',
+    padding: 15,
+    borderRadius: 8,
+  },
+
+  decreaseButton: {
+    backgroundColor: 'orange',
+    padding: 15,
+    borderRadius: 8,
+  },
+
+  resetButton: {
+    backgroundColor: 'skyblue',
+    padding: 15,
+    borderRadius: 8,
+  },
+
+  buttonText: {
+    fontWeight: 'bold',
   },
 });
