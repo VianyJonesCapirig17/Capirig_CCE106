@@ -1,68 +1,168 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-type CounterProps = {
-  incrementValue?: number;
-};
+export default function CalculatorScreen() {
+  const [firstValue, setFirstValue] = useState('');
+  const [secondValue, setSecondValue] = useState('');
+  const [result, setResult] = useState('');
+  const [operator, setOperator] = useState('');
 
-export default function CounterApp({
-  incrementValue = 1,
-}: CounterProps) {
+  const selectOperation = (selectedOperator: string) => {
+    if (firstValue.trim() === '') {
+      setResult('Please enter the first value.');
+      return;
+    }
 
-  // useState for the counter value
-  const [count, setCount] = useState(0);
-
-  // Event handler for Increase
-  const increase = () => {
-    setCount(count + incrementValue);
+    setOperator(selectedOperator);
+    setResult('');
   };
 
-  // Event handler for Decrease
-  const decrease = () => {
-    // Prevent going below zero
-    setCount(Math.max(0, count - incrementValue));
+  const calculate = (value: string) => {
+    if (value.trim() === '') {
+      setResult('');
+      return;
+    }
+
+    if (operator === '') {
+      return;
+    }
+
+    const num1 = Number(firstValue);
+    const num2 = Number(value);
+
+    if (isNaN(num1) || isNaN(num2)) {
+      setResult('Invalid input.');
+      return;
+    }
+
+    let answer: number;
+
+    switch (operator) {
+      case '+':
+        answer = num1 + num2;
+        break;
+
+      case '-':
+        answer = num1 - num2;
+        break;
+
+      case '*':
+        answer = num1 * num2;
+        break;
+
+      case '/':
+        if (num2 === 0) {
+          setResult('Cannot divide by zero.');
+          return;
+        }
+
+        answer = num1 / num2;
+        break;
+
+      default:
+        setResult('Invalid operation.');
+        return;
+    }
+
+    setResult(answer.toString());
   };
 
-  // Event handler for Reset
-  const reset = () => {
-    setCount(0);
+  const clearCalculator = () => {
+    setFirstValue('');
+    setSecondValue('');
+    setResult('');
+    setOperator('');
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Calculator</Text>
 
-      <Text style={styles.title}>Counter App</Text>
+      <View style={styles.calculator}>
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={firstValue}
+            onChangeText={setFirstValue}
+           
+          />
 
-      {/* Display current counter value */}
-      <View style={styles.counterBox}>
-        <Text style={styles.counter}>{count}</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={secondValue}
+            onChangeText={(value) => {
+              setSecondValue(value);
+              calculate(value);
+            }}
+           
+          />
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              operator === '+' && styles.selectedButton,
+            ]}
+            onPress={() => selectOperation('+')}
+          >
+            <Text style={styles.buttonText}>+</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              operator === '-' && styles.selectedButton,
+            ]}
+            onPress={() => selectOperation('-')}
+          >
+            <Text style={styles.buttonText}>−</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              operator === '*' && styles.selectedButton,
+            ]}
+            onPress={() => selectOperation('*')}
+          >
+            <Text style={styles.buttonText}>×</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              operator === '/' && styles.selectedButton,
+            ]}
+            onPress={() => selectOperation('/')}
+          >
+            <Text style={styles.buttonText}>÷</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.resultBox}>
+          <Text style={styles.resultLabel}>Result:</Text>
+
+          <Text style={styles.resultText}>
+            {result === '' ? '--' : result}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={clearCalculator}
+        >
+          <Text style={styles.clearText}>Clear</Text>
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.buttonContainer}>
-
-        <Pressable
-          style={styles.increaseButton}
-          onPress={increase}
-        >
-          <Text style={styles.buttonText}>Increase</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.decreaseButton}
-          onPress={decrease}
-        >
-          <Text style={styles.buttonText}>Decrease</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.resetButton}
-          onPress={reset}
-        >
-          <Text style={styles.buttonText}>Reset</Text>
-        </Pressable>
-
-      </View>
-
     </View>
   );
 }
@@ -70,56 +170,119 @@ export default function CounterApp({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
 
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 30,
+    color: '#222',
+    marginBottom: 20,
   },
 
-  counterBox: {
-    width: 250,
-    height: 150,
-    borderWidth: 2,
-    borderColor: 'gray',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 30,
+  calculator: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'white',
+    padding: 25,
+    borderRadius: 12,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+
+    elevation: 5,
   },
 
-  counter: {
-    fontSize: 60,
-    fontWeight: 'bold',
-  },
-
-  buttonContainer: {
+  inputRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 15,
+    marginBottom: 20,
+  },
+
+  input: {
+    flex: 1,
+    height: 55,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#222',
+    backgroundColor: '#fafafa',
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 10,
+    marginBottom: 15,
   },
 
-  increaseButton: {
-    backgroundColor: 'lightgreen',
-    padding: 15,
+  button: {
+    flex: 1,
+    height: 55,
+    backgroundColor: 'black',
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  decreaseButton: {
-    backgroundColor: 'orange',
-    padding: 15,
-    borderRadius: 8,
-  },
-
-  resetButton: {
-    backgroundColor: 'skyblue',
-    padding: 15,
-    borderRadius: 8,
+  selectedButton: {
+    backgroundColor: '#555',
   },
 
   buttonText: {
+    color: 'white',
+    fontSize: 24,
     fontWeight: 'bold',
+  },
+
+  resultBox: {
+    marginTop: 5,
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fafafa',
+  },
+
+  resultLabel: {
+    fontSize: 14,
+    color: '#777',
+  },
+
+  resultText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#222',
+    marginTop: 5,
+  },
+
+  clearButton: {
+    marginTop: 15,
+    height: 45,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#aaa',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  clearText: {
+    fontSize: 16,
+    color: '#555',
+    fontWeight: '600',
   },
 });
