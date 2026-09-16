@@ -2,34 +2,33 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import EventCard from '../../components/EventCard';
-import { EventItem } from '../../types/event';
-
-const EVENTS: EventItem[] = [
-  { id: '1', title: 'Hackathon 2026', category: 'Academic', dateTime: 'Oct 12, 10:00 AM', venue: 'Main Auditorium', isJoined: true },
-  { id: '2', title: 'Campus Concert', category: 'Entertainment', dateTime: 'Oct 15, 6:00 PM', venue: 'Student Plaza', isJoined: false },
-  { id: '3', title: 'Basketball Tournament', category: 'Sports', dateTime: 'Oct 18, 2:00 PM', venue: 'Gymnasium', isJoined: false },
-  { id: '4', title: 'AI Workshop', category: 'Academic', dateTime: 'Oct 20, 1:00 PM', venue: 'Lab 302', isJoined: true },
-  { id: '5', title: 'Esports League', category: 'Entertainment', dateTime: 'Oct 22, 4:00 PM', venue: 'Student Lounge', isJoined: false },
-];
+import { useEvents } from '../../context/EventContext';
 
 const categories = ['All', 'Academic', 'Entertainment', 'Sports'] as const;
 
 export default function EventsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<(typeof categories)[number]>('All');
   const router = useRouter();
+  const { events } = useEvents();
 
   const filteredEvents = useMemo(() => {
-    if (selectedCategory === 'All') return EVENTS;
-    return EVENTS.filter((event) => event.category === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === 'All') return events;
+    return events.filter((event) => event.category === selectedCategory);
+  }, [events, selectedCategory]);
 
   return (
     <View style={styles.container}>
+      <View style={styles.heading}>
+        <View>
+          <Text style={styles.eyebrow}>CAMPUS EVENTS</Text>
+          <Text style={styles.title}>What&apos;s happening</Text>
+        </View>
+      </View>
       <View style={styles.filterContainer}>
         {categories.map((category) => (
           <Pressable
             key={category}
-            style={[styles.filterButton, selectedCategory === category && styles.activeFilterButton]}
+            style={({ pressed }) => [styles.filterButton, selectedCategory === category && styles.activeFilterButton, pressed && styles.filterPressed]}
             onPress={() => setSelectedCategory(category)}
           >
             <Text style={[styles.filterText, selectedCategory === category && styles.activeFilterText]}>
@@ -42,6 +41,8 @@ export default function EventsScreen() {
       <FlatList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Text style={styles.emptyText}>No events in this category yet.</Text>}
         renderItem={({ item }) => (
           <EventCard item={item} onPress={() => router.push(`/event/${item.id}`)} />
         )}
@@ -53,30 +54,60 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#F4F5F7',
+    padding: 20,
+    backgroundColor: '#EAF5ED',
+  },
+  heading: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  eyebrow: {
+    color: '#087443',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+  },
+  title: {
+    color: '#12251D',
+    fontSize: 28,
+    fontWeight: '700',
+    marginTop: 6,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 18,
     flexWrap: 'wrap',
     gap: 8,
   },
   filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#E2E8F0',
+    paddingVertical: 9,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    backgroundColor: '#D0EBD8',
   },
   activeFilterButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#087443',
+  },
+  filterPressed: {
+    opacity: 0.75,
   },
   filterText: {
-    fontSize: 13,
-    color: '#475569',
+    fontSize: 15,
+    color: '#35624A',
   },
   activeFilterText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  emptyText: {
+    paddingTop: 32,
+    textAlign: 'center',
+    color: '#61716A',
+    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 20,
   },
 });

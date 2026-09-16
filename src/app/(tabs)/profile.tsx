@@ -1,12 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 export default function ProfileScreen() {
@@ -36,11 +36,12 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Image source={{ uri: 'https://picsum.photos/100' }} style={styles.avatar} />
+        <Ionicons name="person" size={88} color="#000000" style={styles.avatar} />
         <Text style={styles.profileName}>{fullName}</Text>
         <Text style={styles.profileEmail}>{email}</Text>
 
         <View style={styles.divider} />
+        <Text style={styles.formHeading}>Personal details</Text>
 
         <Text style={styles.label}>Full Name *</Text>
         <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
           onPress={handleSave}
         >
           <Text style={styles.saveButtonText}>Save Profile</Text>
+          <Ionicons name="checkmark" size={21} color="#FFFFFF" />
         </Pressable>
       </View>
     </ScrollView>
@@ -72,48 +74,53 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F5FBF7',
+    paddingBottom: 32,
+    backgroundColor: '#F4F7F2',
   },
   card: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 16,
+    padding: 24,
+    borderRadius: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: '#DCE9DF',
     elevation: 2,
-    shadowColor: '#166534',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowColor: '#173B2E',
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
     marginBottom: 12,
-    borderWidth: 3,
-    borderColor: '#DCFCE7',
   },
   profileName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#14532D',
+    color: '#12251D',
+    marginTop: 2,
   },
   profileEmail: {
     fontSize: 14,
-    color: '#4B5563',
+    color: '#61716A',
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#DCE9DF',
     width: '100%',
     marginVertical: 16,
   },
+  formHeading: {
+    width: '100%',
+    color: '#12251D',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#14532D',
+    color: '#284C3D',
     alignSelf: 'flex-start',
     marginTop: 12,
     marginBottom: 6,
@@ -121,12 +128,12 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    backgroundColor: '#F0FDF4',
-    color: '#14532D',
+    borderColor: '#CFE2D4',
+    borderRadius: 14,
+    padding: 15,
+    fontSize: 16,
+    backgroundColor: '#F7FBF7',
+    color: '#12251D',
   },
   errorText: {
     color: '#B91C1C',
@@ -142,19 +149,22 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   saveButton: {
-    backgroundColor: '#15803D',
-    padding: 14,
-    borderRadius: 10,
+    backgroundColor: '#0B6B4F',
+    paddingVertical: 18,
+    borderRadius: 14,
     width: '100%',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
     marginTop: 20,
-    shadowColor: '#166534',
+    shadowColor: '#0B6B4F',
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
   saveButtonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 17,
   },
 });

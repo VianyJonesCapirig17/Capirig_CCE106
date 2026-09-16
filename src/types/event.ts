@@ -4,6 +4,6 @@ export type EventItem = {
   category: 'Academic' | 'Entertainment' | 'Sports';
   dateTime: string;
   venue: string;
+  isJoined: boolean;
   description?: string;
-  isJoined?: boolean;
 };

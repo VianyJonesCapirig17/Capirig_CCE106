@@ -1,25 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { EventItem } from '../../types/event';
-
-const EVENTS: EventItem[] = [
-  { id: '1', title: 'Hackathon 2026', category: 'Academic', dateTime: 'Oct 12, 10:00 AM', venue: 'Main Auditorium', description: 'Join us for a 24-hour coding challenge!', isJoined: true },
-  { id: '2', title: 'Campus Concert', category: 'Entertainment', dateTime: 'Oct 15, 6:00 PM', venue: 'Student Plaza', description: 'Live music performances from local student bands.', isJoined: false },
-  { id: '3', title: 'Basketball Tournament', category: 'Sports', dateTime: 'Oct 18, 2:00 PM', venue: 'Gymnasium', description: 'Inter-departmental basketball championship.', isJoined: false },
-  { id: '4', title: 'AI Workshop', category: 'Academic', dateTime: 'Oct 20, 1:00 PM', venue: 'Lab 302', description: 'Introduction to machine learning and AI tools.', isJoined: true },
-  { id: '5', title: 'Esports League', category: 'Entertainment', dateTime: 'Oct 22, 4:00 PM', venue: 'Student Lounge', description: 'Valorant and Mobile Legends tournament.', isJoined: false },
-];
+import { useEvents } from '../../context/EventContext';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [isJoined, setIsJoined] = useState(() => {
-    const matchedEvent = EVENTS.find((item) => item.id === id);
-    return matchedEvent?.isJoined ?? false;
-  });
-
-  const event = EVENTS.find((item) => item.id === id);
+  const { events, toggleJoined } = useEvents();
+  const event = events.find((item) => item.id === id);
 
   if (!event) {
     return (
@@ -35,14 +23,23 @@ export default function EventDetailScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
+        <View style={styles.categoryRow}>
+          <Text style={styles.category}>{event.category.toUpperCase()}</Text>
+          <Ionicons name="calendar-outline" size={22} color="#0B6B4F" />
+        </View>
         <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.category}>{event.category}</Text>
 
         <View style={styles.divider} />
 
-        <Text style={styles.meta}>{event.dateTime}</Text>
-        <Text style={styles.meta}>{event.venue}</Text>
-        <Text style={styles.metaStatus}>{isJoined ? 'Status: Joined' : 'Status: Available'}</Text>
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={20} color="#0B6B4F" />
+          <Text style={styles.meta}>{event.dateTime}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Ionicons name="location-outline" size={20} color="#0B6B4F" />
+          <Text style={styles.meta}>{event.venue}</Text>
+        </View>
+        <Text style={styles.metaStatus}>{event.isJoined ? 'Status: Joined' : 'Status: Available'}</Text>
 
         <Text style={styles.sectionTitle}>About this event</Text>
         <Text style={styles.description}>{event.description}</Text>
@@ -50,16 +47,17 @@ export default function EventDetailScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.actionButton,
-            isJoined ? styles.leaveButton : styles.joinButton,
+            event.isJoined ? styles.leaveButton : styles.joinButton,
             pressed && { opacity: 0.8 },
           ]}
-          onPress={() => setIsJoined((current) => !current)}
+          onPress={() => toggleJoined(event.id)}
         >
-          <Text style={styles.buttonText}>{isJoined ? 'Leave Event' : 'Join Event'}</Text>
+          <Text style={styles.buttonText}>{event.isJoined ? 'Leave Event' : 'Join Event'}</Text>
+          <Ionicons name={event.isJoined ? 'close-outline' : 'add'} size={22} color="#FFFFFF" />
         </Pressable>
 
         <Text style={styles.statusText}>
-          {isJoined ? 'You are attending this event.' : 'You have not joined this event.'}
+          {event.isJoined ? 'You are attending this event.' : 'You have not joined this event.'}
         </Text>
       </View>
     </ScrollView>
@@ -70,61 +68,83 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F4F5F7',
+    paddingBottom: 32,
+    backgroundColor: '#F4F7F2',
   },
   card: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 12,
-    elevation: 2,
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#DCE9DF',
+    shadowColor: '#173B2E',
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: '#12251D',
+    lineHeight: 36,
+    marginTop: 12,
   },
   category: {
-    fontSize: 14,
-    color: '#2563EB',
+    fontSize: 11,
+    color: '#0B6B4F',
     fontWeight: '600',
-    marginTop: 4,
+    letterSpacing: 1.3,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#DCE9DF',
     marginVertical: 16,
   },
   meta: {
     fontSize: 14,
-    color: '#475569',
-    marginBottom: 8,
+    color: '#50615A',
+    marginLeft: 10,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   metaStatus: {
     fontSize: 13,
-    color: '#0F766E',
+    color: '#0B6B4F',
     fontWeight: '600',
     marginBottom: 10,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#12251D',
     marginTop: 16,
     marginBottom: 6,
   },
   description: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#61716A',
     lineHeight: 20,
   },
   actionButton: {
     marginTop: 24,
-    padding: 14,
-    borderRadius: 8,
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
   joinButton: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#0B6B4F',
   },
   leaveButton: {
     backgroundColor: '#DC2626',
@@ -132,13 +152,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 20,
   },
   statusText: {
     marginTop: 12,
     fontSize: 13,
     textAlign: 'center',
-    color: '#64748B',
+    color: '#61716A',
   },
   notFoundContainer: {
     flex: 1,

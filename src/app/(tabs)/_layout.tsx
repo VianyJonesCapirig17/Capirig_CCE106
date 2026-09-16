@@ -4,16 +4,21 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#166534',
-        tabBarInactiveTintColor: '#4B5563',
+        tabBarActiveTintColor: '#0B6B4F',
+        tabBarInactiveTintColor: '#819088',
         headerShown: true,
         tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 18,
+          fontWeight: '700',
+        },
         tabBarStyle: {
-          backgroundColor: '#F0FDF4',
-          borderTopWidth: 0,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#DCE9DF',
           elevation: 0,
           shadowOpacity: 0,
-          height: 60,
+          height: 74,
         },
         tabBarIndicatorStyle: {
           display: 'none',

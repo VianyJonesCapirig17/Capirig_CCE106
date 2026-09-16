@@ -1,16 +1,23 @@
+import { Ionicons } from '@expo/vector-icons';
 import { DimensionValue, StyleSheet, Text, View } from 'react-native';
 
 type StatCardProps = {
   label: string;
   value: string;
   width?: DimensionValue;
+  icon: keyof typeof Ionicons.glyphMap;
 };
 
-export default function StatCard({ label, value, width = '100%' }: StatCardProps) {
+export default function StatCard({ label, value, width = '100%', icon }: StatCardProps) {
   return (
     <View style={[styles.card, { width }]}>
-      <Text style={styles.value}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.iconBadge}>
+        <Ionicons name={icon} size={18} color="#0B6B4F" />
+      </View>
+      <View>
+        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.label}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -18,25 +25,35 @@ export default function StatCard({ label, value, width = '100%' }: StatCardProps
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 16,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#DCE9DF',
+    shadowColor: '#173B2E',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  iconBadge: {
+    width: 40,
+    height: 40,
     borderRadius: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-    shadowColor: '#166534',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    justifyContent: 'center',
+    backgroundColor: '#E5F3EA',
   },
   value: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
-    color: '#15803D',
+    color: '#12251D',
   },
   label: {
-    fontSize: 13,
-    color: '#4B5563',
-    marginTop: 4,
+    fontSize: 12,
+    color: '#61716A',
+    marginTop: 2,
   },
 });
