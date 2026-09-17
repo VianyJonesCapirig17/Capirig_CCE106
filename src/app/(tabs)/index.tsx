@@ -1,13 +1,14 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import StatCard from '../../components/StatCard';
 import { useEvents } from '../../context/EventContext';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const { events, joinedEvents } = useEvents();
   const isWide = width > 500;
-  const cardWidth = isWide ? '31%' : '100%';
+  const cardWidth = isWide ? (width - 40 - 36) / 4 : '100%';
   const stats = [
     { label: 'Total events', value: String(events.length), icon: 'calendar-outline' as const },
     { label: 'Joined events', value: String(joinedEvents.length), icon: 'checkmark-circle-outline' as const },
@@ -28,13 +29,27 @@ export default function HomeScreen() {
         {stats.map((item) => (
           <StatCard key={item.label} icon={item.icon} label={item.label} value={item.value} width={cardWidth} />
         ))}
+        <Pressable
+          style={({ pressed }) => [styles.attendanceCard, { width: cardWidth }, pressed && styles.buttonPressed]}
+          onPress={() => router.push('/attendance')}
+        >
+          <View style={styles.attendanceIcon}>
+            <Text style={styles.attendanceIconText}>✓</Text>
+          </View>
+          <View style={styles.attendanceCopy}>
+            <Text style={styles.attendanceTitle}>Attendance</Text>
+            <Text style={styles.attendanceSubtitle}>Mark today&apos;s attendance</Text>
+          </View>
+          <Text style={styles.attendanceArrow}>→</Text>
+        </Pressable>
       </View>
 
-      <Link href="/(tabs)/events" asChild>
-        <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-          <Text style={styles.buttonText}>Explore Events  →</Text>
-        </Pressable>
-      </Link>
+      <Pressable
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        onPress={() => router.push('/(tabs)/events')}
+      >
+        <Text style={styles.buttonText}>Explore Events  →</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -90,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   button: {
-    backgroundColor: '#C9982D',
+    backgroundColor: '#0B6B4F',
     paddingVertical: 18,
     paddingHorizontal: 22,
     borderRadius: 16,
@@ -104,8 +119,55 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.985 }],
   },
   buttonText: {
-    color: '#087443',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 17,
+  },
+  attendanceCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#DCE9DF',
+    borderWidth: 1,
+    borderRadius: 16,
+    minHeight: 74,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#0B6B4F',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  attendanceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: '#E4F3E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attendanceIconText: {
+    color: '#0B6B4F',
+    fontSize: 23,
+    fontWeight: '800',
+  },
+  attendanceCopy: {
+    flex: 1,
+  },
+  attendanceTitle: {
+    color: '#12352A',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  attendanceSubtitle: {
+    color: '#819088',
+    fontSize: 11,
+    marginTop: 3,
+  },
+  attendanceArrow: {
+    color: '#0B6B4F',
+    fontSize: 23,
+    fontWeight: '700',
   },
 });

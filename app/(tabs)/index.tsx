@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ScrollView,
@@ -311,6 +312,27 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        <View style={styles.attendanceSection}>
+          <Link href="/attendance" asChild>
+            <TouchableOpacity style={styles.attendanceCard}>
+              <View style={styles.attendanceIcon}>
+                <Text style={styles.attendanceIconText}>✓</Text>
+              </View>
+
+              <View style={styles.attendanceContent}>
+                <Text style={styles.attendanceTitle}>
+                  Attendance
+                </Text>
+                <Text style={styles.attendanceSubtitle}>
+                  Mark today&apos;s student attendance
+                </Text>
+              </View>
+
+              <Text style={styles.attendanceArrow}>›</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             Overview
@@ -544,6 +566,58 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 25,
     paddingHorizontal: 20,
+  },
+
+  attendanceSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+
+  attendanceCard: {
+    minHeight: 82,
+    backgroundColor: COLORS.black,
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  attendanceIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+
+  attendanceIconText: {
+    color: COLORS.black,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+
+  attendanceContent: {
+    flex: 1,
+  },
+
+  attendanceTitle: {
+    color: COLORS.white,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  attendanceSubtitle: {
+    color: COLORS.lightGray,
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  attendanceArrow: {
+    color: COLORS.gold,
+    fontSize: 32,
+    fontWeight: '300',
   },
 
   sectionTitle: {
