@@ -34,9 +34,34 @@ export default function TabLayout() {
         name="lesson"
         options={{
           title: 'Lesson',
+          href: null,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chevron.left.forwardslash.chevron.right" color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="assessment"
+        options={{
+          title: 'Assessment',
+          href: null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="checkmark.seal.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="troubleshooting"
+        options={{
+          title: 'Troubleshooting',
+          href: null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="wrench.and.screwdriver.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rubric"
+        options={{
+          title: 'Rubric',
+          href: null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.number" color={color} />,
         }}
       />
     </Tabs>

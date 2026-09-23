@@ -1,59 +1,63 @@
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions, type ViewStyle } from 'react-native';
 
-const topics = [
-  { title: 'API', description: 'connects systems', color: '#10a4c5' },
-  { title: 'REST', description: 'organizes resources', color: '#d0a813' },
-  { title: 'JSON', description: 'carries data', color: '#09a27d' },
-  { title: 'fetch()', description: 'sends requests', color: '#10a4c5' },
-  { title: 'State', description: 'drives the UI', color: '#d0a813' },
-  { title: 'Errors', description: 'must be handled', color: '#7253cb' },
+const concepts = [
+  { title: 'Login', detail: 'proves identity' },
+  { title: 'Token', detail: 'represents the session' },
+  { title: 'Bearer', detail: 'authorizes requests' },
+  { title: 'SecureStore', detail: 'persists the token' },
+  { title: '401 / 403', detail: 'explain denial' },
+  { title: 'Logout', detail: 'clears the session' },
 ];
 
-export default function ApiLessonScreen() {
-  const { width } = useWindowDimensions();
-  const cardWidth = width >= 900 ? '31.5%' : width >= 600 ? '48%' : '100%';
+export default function LessonScreen() {
+  const { width, height } = useWindowDimensions();
+  const horizontalPadding = width * 0.058;
+  const contentWidth = width - horizontalPadding * 2;
+  const gap = Math.max(18, width * 0.038);
+  const columns = width >= 900 ? 3 : width >= 600 ? 2 : 1;
+  const cardWidth: ViewStyle['width'] = columns === 1
+    ? '100%'
+    : `${(contentWidth - gap * (columns - 1)) / contentWidth * 100}%`;
+  const cardHeight = Math.max(112, height * 0.176);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.page, { paddingHorizontal: horizontalPadding, paddingTop: height < 650 ? 14 : 27, paddingBottom: 18 }]}>
       <Text style={styles.eyebrow}>LESSON SUMMARY</Text>
 
-      <View style={styles.grid}>
-        {topics.map((topic) => (
-          <View key={topic.title} style={[styles.card, { width: cardWidth }]}>
-            <View style={[styles.accent, { backgroundColor: topic.color }]} />
-            <Text style={styles.cardTitle}>{topic.title}</Text>
-            <Text style={styles.cardDescription}>{topic.description}</Text>
+      <View style={[styles.grid, { gap, marginTop: columns === 3 ? 'auto' : 28, marginBottom: columns === 3 ? 'auto' : 24 }]}>
+        {concepts.map((concept) => (
+          <View key={concept.title} style={[styles.card, { width: cardWidth, minHeight: cardHeight }]}>
+            <Text style={styles.cardTitle}>{concept.title}</Text>
+            <Text style={styles.cardDetail}>{concept.detail}</Text>
           </View>
         ))}
       </View>
 
-      <View style={styles.reminder}>
-        <Text style={styles.reminderText}>
-          <Text style={styles.remember}>REMEMBER: </Text>
-          useState remembers · useEffect reacts · APIs connect
-        </Text>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>CCE106 · React Native</Text>
-        <Text style={styles.footerText}>44</Text>
+      <View style={styles.bottom}>
+        <View style={styles.flow}>
+          <Text style={styles.flowText}>IDENTITY  →  TOKEN  →  SECURE STORAGE  →  PROTECTED DATA</Text>
+        </View>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>CCE106 · React Native</Text>
+          <Text style={styles.pageNumber}>42</Text>
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#e7f2f5' },
-  content: { flexGrow: 1, paddingHorizontal: '6%', paddingTop: 28, paddingBottom: 22 },
-  eyebrow: { color: '#168b9a', fontSize: 13, fontWeight: '800', letterSpacing: 1.2, marginBottom: 26 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 24 },
-  card: { minHeight: 150, borderRadius: 14, borderWidth: 1, borderColor: '#b4c5d1', backgroundColor: '#eaf4f7', alignItems: 'center', justifyContent: 'center', padding: 20, overflow: 'hidden' },
-  accent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 8 },
-  cardTitle: { color: '#d9cf79', fontSize: 26, fontWeight: '800', marginBottom: 14, textAlign: 'center' },
-  cardDescription: { color: '#23364f', fontSize: 18, textAlign: 'center' },
-  reminder: { alignSelf: 'center', marginTop: 'auto', marginBottom: 26, paddingVertical: 10, paddingHorizontal: 22, borderRadius: 24, backgroundColor: '#149dbd' },
-  reminderText: { color: '#e8f4fa', fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  remember: { fontWeight: '900' },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10 },
-  footerText: { color: '#75848b', fontSize: 11 },
+  screen: { flex: 1, backgroundColor: '#E6EFF1' },
+  page: { flexGrow: 1 },
+  eyebrow: { color: '#087B9B', fontSize: 15, fontWeight: '900', letterSpacing: 1.2 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  card: { backgroundColor: '#07559D', borderColor: '#087DAE', borderWidth: 1, borderRadius: 13, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16 },
+  cardTitle: { color: '#D0C960', fontSize: 27, fontWeight: '900', textAlign: 'center', letterSpacing: 0.4 },
+  cardDetail: { color: '#E4F0F6', fontSize: 20, textAlign: 'center', marginTop: 16, letterSpacing: 0.2 },
+  bottom: { marginTop: 'auto' },
+  flow: { alignSelf: 'center', width: '60%', minWidth: 320, backgroundColor: '#079BC5', borderColor: '#42B6D0', borderWidth: 1, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 26 },
+  flowText: { color: '#DFF5F6', fontSize: 15, fontWeight: '900', letterSpacing: 1.1, textAlign: 'center' },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerText: { color: '#657A89', fontSize: 13 },
+  pageNumber: { color: '#087B9B', fontSize: 14, fontWeight: '800' },
 });

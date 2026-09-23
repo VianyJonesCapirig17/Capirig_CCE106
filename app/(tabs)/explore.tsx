@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -29,14 +29,6 @@ async function fetchRandomQuote(): Promise<Quote> {
   return { text: item.q.trim(), author: item.a.trim() };
 }
 
-const features = [
-  'Fetch one quote',
-  'Show author and quote',
-  'Loading indicator',
-  'Error message',
-  'New Quote button',
-];
-
 export default function QuotesScreen() {
   const { width } = useWindowDimensions();
   const isWide = width >= 850;
@@ -60,13 +52,13 @@ export default function QuotesScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.eyebrow}>BEGINNER PROJECT</Text>
+      <Text style={styles.eyebrow}>DAILY INSPIRATION</Text>
       <Text style={[styles.pageTitle, !isWide && styles.pageTitleSmall]}>
-        Mini project option 1: Quotes App
+        Quotes
       </Text>
 
-      <View style={[styles.main, isWide && styles.mainWide]}>
-        <View style={[styles.quoteCard, isWide && styles.quoteCardWide]}>
+      <View style={styles.main}>
+        <View style={styles.quoteCard}>
           <Text style={styles.quoteLabel}>QUOTE OF THE DAY</Text>
           {loading && !quote ? (
             <View style={styles.messageArea}>
@@ -94,14 +86,6 @@ export default function QuotesScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.featureList}>
-          {features.map((feature) => (
-            <View key={feature} style={styles.featureRow}>
-              <View style={styles.bullet} />
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
-        </View>
       </View>
 
       <View style={styles.footer}>
@@ -120,10 +104,8 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#168b9a', fontSize: 13, fontWeight: '800', letterSpacing: 1.2, marginBottom: 18 },
   pageTitle: { color: '#122d57', fontSize: 42, lineHeight: 50, fontWeight: '800', marginBottom: 34 },
   pageTitleSmall: { fontSize: 29, lineHeight: 36 },
-  main: { gap: 28 },
-  mainWide: { flexDirection: 'row', alignItems: 'center', gap: '6%' },
-  quoteCard: { minHeight: 420, borderRadius: 22, backgroundColor: '#082c68', padding: 30, alignItems: 'center', justifyContent: 'space-between' },
-  quoteCardWide: { width: '47%' },
+  main: { width: '100%', maxWidth: 760, alignSelf: 'center' },
+  quoteCard: { minHeight: 390, borderRadius: 22, backgroundColor: '#082c68', padding: 30, alignItems: 'center', justifyContent: 'space-between' },
   quoteLabel: { color: '#11b1c7', fontSize: 19, fontWeight: '800', letterSpacing: 0.6, textAlign: 'center' },
   quoteContent: { flex: 1, justifyContent: 'center', paddingVertical: 26 },
   quoteText: { color: '#e8f1f5', fontSize: 27, lineHeight: 35, fontWeight: '700', textAlign: 'center' },
@@ -135,10 +117,6 @@ const styles = StyleSheet.create({
   button: { width: '65%', minHeight: 48, borderRadius: 26, backgroundColor: '#10a6c8', alignItems: 'center', justifyContent: 'center' },
   buttonDisabled: { opacity: 0.75 },
   buttonText: { color: '#e8f1f5', fontSize: 16, fontWeight: '800', letterSpacing: 0.4 },
-  featureList: { flex: 1, justifyContent: 'space-evenly', paddingVertical: 12 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 24, marginVertical: 13 },
-  bullet: { width: 17, height: 17, borderRadius: 9, backgroundColor: '#119fc1' },
-  featureText: { flex: 1, color: '#17253d', fontSize: 22 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', marginTop: 'auto', paddingTop: 30 },
   attribution: { color: '#168b9a', fontSize: 11 },
   footerText: { color: '#75848b', fontSize: 11 },

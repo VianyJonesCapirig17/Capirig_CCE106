@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -8,768 +10,211 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-type Task = {
+const SESSION_KEY = 'student_portal_token';
+const API_URL = 'https://dummyjson.com';
+
+type StudentProfile = {
   id: number;
-  title: string;
-  dueDate: string;
-  completed: boolean;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
 };
 
-type MetricCardProps = {
-  number: number;
-  label: string;
+type LoginResponse = {
+  accessToken?: string;
+  message?: string;
+  [key: string]: unknown;
 };
 
-const COLORS = {
-  background: 'whitesmoke',
-  black: 'black',
-  white: 'white',
-  gold: 'gold',
-  gray: 'gray',
-  lightGray: 'lightgray',
-  inputBackground: 'floralwhite',
-  delete: 'firebrick',
-};
+async function readResponse<T>(response: Response): Promise<T> {
+  return await response.json() as T;
+}
 
-function MetricCard({
-  number,
-  label,
-}: MetricCardProps) {
+function ProfileRow({ label, value, icon }: { label: string; value: string; icon: React.ComponentProps<typeof MaterialIcons>['name'] }) {
   return (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricNumber}>
-        {number}
-      </Text>
-
-      <Text style={styles.metricLabel}>
-        {label}
-      </Text>
+    <View style={styles.profileRow}>
+      <View style={styles.rowCopy}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowValue}>{value}</Text>
+      </View>
+      <View style={styles.rowIcon}><MaterialIcons name={icon} size={21} color="#718497" /></View>
     </View>
   );
 }
 
-function DashboardContent() {
-  const { width } = useWindowDimensions();
-  const isWide = width >= 600;
-
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: 'Complete React Native Activity',
-      dueDate: '09/15/2026',
-      completed: false,
-    },
-    {
-      id: 2,
-      title: 'Submit Capstone Proposal',
-      dueDate: '09/20/2026',
-      completed: true,
-    },
-  ]);
-
-  const [taskTitle, setTaskTitle] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [showProfile, setShowProfile] = useState(false);
-
-  const completedTasks = tasks.filter(
-    task => task.completed
-  ).length;
-
-  const pendingTasks =
-    tasks.length - completedTasks;
-
-  const formatDueDate = (text: string) => {
-    const numbers = text
-      .replace(/\D/g, '')
-      .slice(0, 8);
-
-    if (numbers.length === 0) {
-      setDueDate('');
-      return;
-    }
-
-    if (numbers.length === 1) {
-      const firstDigit = Number(numbers);
-
-      if (firstDigit > 1) {
-        return;
-      }
-
-      setDueDate(numbers);
-      return;
-    }
-
-    const month = Number(
-      numbers.slice(0, 2)
-    );
-
-    if (month < 1 || month > 12) {
-      return;
-    }
-
-    if (numbers.length <= 2) {
-      setDueDate(numbers);
-      return;
-    }
-
-    if (numbers.length === 3) {
-      const firstDayDigit = Number(
-        numbers.slice(2, 3)
-      );
-
-      if (firstDayDigit > 3) {
-        return;
-      }
-
-      setDueDate(
-        numbers.slice(0, 2) +
-          '/' +
-          numbers.slice(2)
-      );
-
-      return;
-    }
-
-    const day = Number(
-      numbers.slice(2, 4)
-    );
-
-    if (day < 1 || day > 31) {
-      return;
-    }
-
-    if (numbers.length <= 4) {
-      setDueDate(
-        numbers.slice(0, 2) +
-          '/' +
-          numbers.slice(2)
-      );
-
-      return;
-    }
-
-    const year = Number(
-      numbers.slice(4, 8)
-    );
-
-    if (numbers.length === 8) {
-      const maxDays = new Date(
-        year,
-        month,
-        0
-      ).getDate();
-
-      if (day > maxDays) {
-        return;
-      }
-    }
-
-    setDueDate(
-      numbers.slice(0, 2) +
-        '/' +
-        numbers.slice(2, 4) +
-        '/' +
-        numbers.slice(4)
-    );
-  };
-
-  const isValidDate = (date: string) => {
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
-      return false;
-    }
-
-    const [monthString, dayString, yearString] =
-      date.split('/');
-
-    const month = Number(monthString);
-    const day = Number(dayString);
-    const year = Number(yearString);
-
-    if (
-      month < 1 ||
-      month > 12 ||
-      day < 1 ||
-      year < 1
-    ) {
-      return false;
-    }
-
-    const maxDays = new Date(
-      year,
-      month,
-      0
-    ).getDate();
-
-    return day <= maxDays;
-  };
-
-  const addTask = () => {
-    if (
-      taskTitle.trim() === '' ||
-      dueDate.trim() === ''
-    ) {
-      return;
-    }
-
-    if (!isValidDate(dueDate)) {
-      return;
-    }
-
-    const newTask: Task = {
-      id: Date.now(),
-      title: taskTitle.trim(),
-      dueDate: dueDate.trim(),
-      completed: false,
-    };
-
-    setTasks(currentTasks => [
-      ...currentTasks,
-      newTask,
-    ]);
-
-    setTaskTitle('');
-    setDueDate('');
-  };
-
-  const toggleTask = (id: number) => {
-    setTasks(currentTasks =>
-      currentTasks.map(task =>
-        task.id === id
-          ? {
-              ...task,
-              completed: !task.completed,
-            }
-          : task
-      )
-    );
-  };
-
-  const deleteTask = (id: number) => {
-    setTasks(currentTasks =>
-      currentTasks.filter(
-        task => task.id !== id
-      )
-    );
-  };
+function DashboardContent({ profile, onLogout, onTest401, onTest403 }: { profile: StudentProfile; onLogout: () => void; onTest401: () => void; onTest403: () => void }) {
+  const fullName = `${profile.firstName} ${profile.lastName}`;
 
   return (
-    <View style={styles.screen}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={COLORS.black}
-      />
-
-      <ScrollView
-        contentContainerStyle={[
-          styles.container,
-          isWide && styles.wideContainer,
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.smallHeader}>
-              STUDENT DASHBOARD
-            </Text>
-
-            <Text style={styles.welcome}>
-              Welcome, Viany
-            </Text>
+    <View style={styles.dashboard}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F1F7F8" />
+      <View pointerEvents="none" style={styles.dashboardGlow} />
+      <ScrollView contentContainerStyle={styles.dashboardContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandIcon}><Text style={styles.brandIconText}>C</Text></View>
+          <View style={styles.brandCopy}>
+            <Text style={styles.brandTitle}>CCE 106</Text>
+            <Text style={styles.brandSubtitle}>STUDENT PORTAL</Text>
           </View>
+          <View style={styles.secureBadge}><View style={styles.secureDot} /><Text style={styles.secureText}>SECURE</Text></View>
+        </View>
 
-          <View style={styles.profileContainer}>
-            <TouchableOpacity
-              style={styles.profileCircle}
-              onPress={() =>
-                setShowProfile(
-                  current => !current
-                )
-              }
-            >
-              <Text style={styles.profileText}>
-                VJ
-              </Text>
+        <View style={styles.welcomeBlock}>
+          <Text style={styles.eyebrow}>STUDENT DASHBOARD</Text>
+          <Text style={styles.welcomeTitle}>Welcome back, {profile.firstName}.</Text>
+          <Text style={styles.welcomeSubtitle}>Your authenticated student profile is ready.</Text>
+        </View>
+
+        <View style={styles.sessionCard}>
+          <View style={styles.sessionIcon}><MaterialIcons name="verified-user" size={27} color="#13856C" /></View>
+          <View style={styles.sessionCopy}>
+            <Text style={styles.sessionTitle}>Protected session active</Text>
+            <Text style={styles.sessionDescription}>Your profile was loaded with an authenticated request.</Text>
+          </View>
+          <View style={styles.sessionDot} />
+        </View>
+
+        <View style={styles.profileCard}>
+          <View style={styles.profileCardTop}>
+            <Text style={styles.cardEyebrow}>PROFILE</Text>
+            <View style={styles.studentPill}><Text style={styles.studentPillText}>STUDENT</Text></View>
+          </View>
+          <View style={styles.nameBlock}>
+            <Text style={styles.studentName}>{fullName}</Text>
+            <Text style={styles.studentEmail}>{profile.email}</Text>
+          </View>
+          <View style={styles.divider} />
+          <ProfileRow label="STUDENT ID" value={String(profile.id)} icon="badge" />
+          <ProfileRow label="PROGRAM" value="BS Information Technology" icon="school" />
+          <ProfileRow label="ACCESS LEVEL" value="Student account" icon="verified-user" />
+          <View style={styles.statusDemoButtons}>
+            <TouchableOpacity style={[styles.statusDemoButton, styles.unauthorizedButton]} onPress={onTest401}>
+              <MaterialIcons name="lock-outline" size={18} color="#A33F4A" />
+              <Text style={[styles.statusDemoText, styles.unauthorizedText]}>Demonstrate 401</Text>
             </TouchableOpacity>
-
-            {showProfile && (
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>
-                  Viany Jones Capirig
-                </Text>
-
-                <Text style={styles.profileDetail}>
-                  Student ID: 145568
-                </Text>
-
-                <Text style={styles.profileDetail}>
-                  Course: BS Information Technology
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Overview
-          </Text>
-
-          <View style={styles.metrics}>
-            <MetricCard
-              number={tasks.length}
-              label="Total Tasks"
-            />
-
-            <MetricCard
-              number={pendingTasks}
-              label="Pending"
-            />
-
-            <MetricCard
-              number={completedTasks}
-              label="Completed"
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Create New Task
-          </Text>
-
-          <View style={styles.formCard}>
-            <Text style={styles.inputLabel}>
-              Task Title
-            </Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Enter task title"
-              placeholderTextColor={
-                COLORS.lightGray
-              }
-              value={taskTitle}
-              onChangeText={setTaskTitle}
-            />
-
-            <Text style={styles.inputLabel}>
-              Due Date
-            </Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor={
-                COLORS.lightGray
-              }
-              value={dueDate}
-              onChangeText={formatDueDate}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={addTask}
-            >
-              <Text style={styles.createButtonText}>
-                Create Task
-              </Text>
+            <TouchableOpacity style={[styles.statusDemoButton, styles.forbiddenButton]} onPress={onTest403}>
+              <MaterialIcons name="gpp-bad" size={18} color="#985238" />
+              <Text style={[styles.statusDemoText, styles.forbiddenText]}>Demonstrate 403</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Recent Activity
-          </Text>
-
-          {tasks.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>
-                No tasks available
-              </Text>
-            </View>
-          ) : (
-            tasks.map(task => (
-              <View
-                key={task.id}
-                style={styles.taskCard}
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.checkbox,
-                    task.completed &&
-                      styles.checkboxCompleted,
-                  ]}
-                  onPress={() =>
-                    toggleTask(task.id)
-                  }
-                >
-                  {task.completed && (
-                    <Text style={styles.checkmark}>
-                      ✓
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.taskContent}>
-                  <Text
-                    style={[
-                      styles.taskTitle,
-                      task.completed &&
-                        styles.completedTaskTitle,
-                    ]}
-                  >
-                    {task.title}
-                  </Text>
-
-                  <Text style={styles.dueDateText}>
-                    Due: {task.dueDate}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() =>
-                    deleteTask(task.id)
-                  }
-                >
-                  <Text style={styles.deleteText}>
-                    Delete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
+        <TouchableOpacity style={styles.signOutButton} onPress={onLogout}>
+          <Text style={styles.signOutText}>SIGN OUT</Text>
+          <MaterialIcons name="logout" size={22} color="#708396" />
+        </TouchableOpacity>
+        <Text style={styles.savedSession}>Your session is saved securely on this device.</Text>
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-
-  container: {
-    paddingBottom: 40,
-  },
-
-  wideContainer: {
-    paddingHorizontal: 80,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 1300,
-  },
-
-  header: {
-    backgroundColor: COLORS.black,
-    paddingHorizontal: 20,
-    paddingTop: 25,
-    paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  headerText: {
-    flex: 1,
-  },
-
-  smallHeader: {
-    color: COLORS.gold,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 7,
-  },
-
-  welcome: {
-    color: COLORS.white,
-    fontSize: 23,
-    fontWeight: '700',
-  },
-
-  profileContainer: {
-    alignItems: 'flex-end',
-    position: 'relative',
-    zIndex: 20,
-  },
-
-  profileCircle: {
-    width: 55,
-    height: 55,
-    borderRadius: 30,
-    backgroundColor: COLORS.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  profileText: {
-    color: COLORS.black,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-
-  profileInfo: {
-    position: 'absolute',
-    top: 65,
-    right: 0,
-    width: 235,
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
-    padding: 18,
-    zIndex: 30,
-    elevation: 8,
-  },
-
-  profileName: {
-    color: COLORS.black,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 7,
-  },
-
-  profileDetail: {
-    color: COLORS.gray,
-    fontSize: 12,
-    marginBottom: 4,
-  },
-
-  section: {
-    marginTop: 25,
-    paddingHorizontal: 20,
-  },
-
-  sectionTitle: {
-    color: COLORS.black,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-
-  metrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-
-  metricCard: {
-    width: '31.5%',
-    minHeight: 105,
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    padding: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  metricNumber: {
-    color: COLORS.gold,
-    fontSize: 29,
-    fontWeight: '800',
-  },
-
-  metricLabel: {
-    color: COLORS.gray,
-    fontSize: 12,
-    marginTop: 7,
-  },
-
-  formCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    padding: 20,
-  },
-
-  inputLabel: {
-    color: COLORS.black,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 7,
-  },
-
-  input: {
-    backgroundColor: COLORS.inputBackground,
-    borderWidth: 1,
-    borderColor: COLORS.black,
-    borderRadius: 7,
-    minHeight: 45,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    color: COLORS.black,
-    fontSize: 14,
-  },
-
-  createButton: {
-    backgroundColor: COLORS.gold,
-    minHeight: 45,
-    borderRadius: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 7,
-  },
-
-  createButtonText: {
-    color: COLORS.black,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  taskCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    padding: 18,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: COLORS.black,
-    borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  checkboxCompleted: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
-  },
-
-  checkmark: {
-    color: COLORS.black,
-    fontWeight: '800',
-  },
-
-  taskContent: {
-    flex: 1,
-  },
-
-  taskTitle: {
-    color: COLORS.black,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-
-  completedTaskTitle: {
-    textDecorationLine: 'line-through',
-    color: COLORS.gray,
-  },
-
-  dueDateText: {
-    color: COLORS.lightGray,
-    fontSize: 11,
-  },
-
-  deleteButton: {
-    marginLeft: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-  },
-
-  deleteText: {
-    color: COLORS.delete,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  emptyCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    padding: 30,
-    alignItems: 'center',
-  },
-
-  emptyText: {
-    color: COLORS.lightGray,
-    fontSize: 14,
-  },
-});
-
-const SESSION_KEY = 'student_portal_token';
-
-type LoginResponse = {
-  token?: unknown;
-  accessToken?: unknown;
-  access_token?: unknown;
-};
-
-function getTokenFromResponse(response: LoginResponse): string {
-  // Use the field your backend actually returns. These common names are supported here.
-  const value = response.access_token ?? response.accessToken ?? response.token;
-  if (typeof value !== 'string' || value.trim().length === 0 || value === 'undefined') {
-    throw new Error('Login succeeded, but the response did not contain a valid token.');
-  }
-  return value.trim();
-}
-
 export default function DashboardScreen() {
-  const [sessionStatus, setSessionStatus] = useState<'restoring' | 'signed-out' | 'signed-in'>('restoring');
   const [token, setToken] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [savedToken, setSavedToken] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [readyForLogin, setReadyForLogin] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
-    async function restoreSession() {
-      try {
-        const savedToken = await SecureStore.getItemAsync(SESSION_KEY);
-        const validToken = savedToken?.trim();
-        if (!mounted) return;
-        if (validToken && validToken !== 'undefined') {
-          setToken(validToken);
-          setSessionStatus('signed-in');
-        } else {
-          setSessionStatus('signed-out');
-        }
-      } catch {
-        if (mounted) {
-          setError('Could not restore your session. Please log in again.');
-          setSessionStatus('signed-out');
-        }
-      }
-    }
-    restoreSession();
+    void SecureStore.getItemAsync(SESSION_KEY)
+      .then(value => {
+        if (mounted) setSavedToken(value?.trim() && value !== 'undefined' ? value.trim() : null);
+      })
+      .catch(() => undefined)
+      .finally(() => { if (mounted) setReadyForLogin(true); });
     return () => { mounted = false; };
   }, []);
 
-  async function login() {
+  async function continueSavedSession() {
+    if (!savedToken || loading) return;
     setError('');
-    if (!email.trim() || !password) {
-      setError('Enter your email and password.');
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${savedToken}` },
+      });
+      if (response.status === 401) {
+        await SecureStore.deleteItemAsync(SESSION_KEY);
+        setSavedToken(null);
+        Alert.alert('401 Unauthorized', 'Your saved session has expired. Please sign in again.');
+        return;
+      }
+      if (response.status === 403) {
+        await SecureStore.deleteItemAsync(SESSION_KEY);
+        setSavedToken(null);
+        Alert.alert('403 Forbidden', 'Your account cannot access this profile. Please sign in with an authorized account.');
+        return;
+      }
+      if (!response.ok) throw new Error('Could not restore the saved profile.');
+      const savedProfile = await readResponse<StudentProfile>(response);
+      setToken(savedToken);
+      setProfile(savedProfile);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not restore the saved session.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function login() {
+    if (!readyForLogin) return;
+    setError('');
+    if (!username.trim() || !password) {
+      setError('Enter your username and password.');
       return;
     }
 
     setLoading(true);
     try {
-      // Demo credentials; replace this check with your backend login request.
-      await new Promise(resolve => setTimeout(resolve, 700));
-      if (email.trim().toLowerCase() !== 'student@example.com' || password !== 'password123') {
-        throw new Error('Invalid email or password.');
+      const loginResponse = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password, expiresInMins: 30 }),
+      });
+      const response = await readResponse<LoginResponse>(loginResponse);
+      if (loginResponse.status === 401) {
+        Alert.alert('401 Unauthorized', 'The username or password is incorrect.');
+        setError('Invalid username or password.');
+        return;
       }
-      // Mimics a server response. Change access_token to your API's actual field name.
-      const response: LoginResponse = { access_token: 'demo-student-token' };
-      const newToken = getTokenFromResponse(response);
+      if (loginResponse.status === 403) {
+        Alert.alert('403 Forbidden', 'This account is not allowed to sign in.');
+        return;
+      }
+      if (!loginResponse.ok) throw new Error(response.message ?? 'Sign in failed. Please try again.');
+      if (!response.accessToken) throw new Error('The login response did not include an access token.');
+
+      const newToken = response.accessToken;
+      const profileResponse = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${newToken}` },
+      });
+      if (profileResponse.status === 401) {
+        Alert.alert('401 Unauthorized', 'The server did not accept the token returned at sign in.');
+        return;
+      }
+      if (profileResponse.status === 403) {
+        Alert.alert('403 Forbidden', 'You are signed in, but this account cannot access the profile.');
+        return;
+      }
+      if (!profileResponse.ok) throw new Error('The protected profile request failed.');
+      const studentProfile = await readResponse<StudentProfile>(profileResponse);
       await SecureStore.setItemAsync(SESSION_KEY, newToken);
+      setSavedToken(newToken);
       setToken(newToken);
-      setSessionStatus('signed-in');
+      setProfile(studentProfile);
       setPassword('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Login failed. Please try again.');
+      setError(cause instanceof Error ? cause.message : 'Sign in failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -779,68 +224,205 @@ export default function DashboardScreen() {
     try {
       await SecureStore.deleteItemAsync(SESSION_KEY);
     } finally {
-      // Always clear the in-memory session, even if secure storage reports an error.
       setToken(null);
-      setSessionStatus('signed-out');
-      setEmail('');
+      setProfile(null);
+      setSavedToken(null);
+      setUsername('');
       setPassword('');
       setError('');
     }
   }
 
-  async function authorizedFetch(url: string, options: RequestInit = {}) {
-    if (!token) throw new Error('No session token is available.');
-    const headers = new Headers(options.headers);
-    headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(url, { ...options, headers });
-    if (response.status === 401) {
-      await logout();
-      throw new Error('Your session expired. Please log in again.');
+  async function testForbiddenResponse() {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_URL}/http/403/Forbidden`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 403) {
+        Alert.alert('403 Forbidden', 'The server denied access to this resource. This mock endpoint demonstrates the app’s 403 handling.');
+        return;
+      }
+      Alert.alert('Unexpected response', `The demo endpoint returned HTTP ${response.status} instead of 403.`);
+    } catch {
+      Alert.alert('Request failed', 'Could not reach the 403 demo endpoint. Check your internet connection.');
     }
-    return response;
   }
 
-  // Use authorizedFetch for protected API calls, for example:
-  // const response = await authorizedFetch(`${API_URL}/profile`);
-  void authorizedFetch;
-
-  if (sessionStatus === 'restoring') {
-    return <View style={authStyles.center}><ActivityIndicator size="large" color="#087e8b" /><Text style={authStyles.help}>Restoring session…</Text></View>;
+  async function testUnauthorizedResponse() {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_URL}/http/401/Unauthorized`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        Alert.alert('401 Unauthorized', 'The server rejected this request as unauthenticated. This mock endpoint demonstrates the app’s 401 handling.');
+        return;
+      }
+      Alert.alert('Unexpected response', `The demo endpoint returned HTTP ${response.status} instead of 401.`);
+    } catch {
+      Alert.alert('Request failed', 'Could not reach the 401 demo endpoint. Check your internet connection.');
+    }
   }
 
-  if (token) {
-    return <View style={authStyles.protected}><DashboardContent /><TouchableOpacity style={authStyles.logout} onPress={logout}><Text style={authStyles.logoutText}>Log out</Text></TouchableOpacity></View>;
+  if (token && profile) {
+    return <View style={authStyles.protected}><DashboardContent profile={profile} onLogout={() => void logout()} onTest401={() => void testUnauthorizedResponse()} onTest403={() => void testForbiddenResponse()} /></View>;
   }
 
   return (
-    <View style={authStyles.center}>
-      <View style={authStyles.card}>
-        <Text style={authStyles.eyebrow}>STUDENT PORTAL</Text>
-        <Text style={authStyles.title}>Log in</Text>
-        <Text style={authStyles.help}>Sign in to view your protected dashboard.</Text>
-        <TextInput style={authStyles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!loading} />
-        <TextInput style={authStyles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" editable={!loading} onSubmitEditing={login} />
-        {!!error && <Text style={authStyles.error}>{error}</Text>}
-        <TouchableOpacity style={[authStyles.button, loading && { opacity: 0.7 }]} onPress={login} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={authStyles.buttonText}>Log in</Text>}
-        </TouchableOpacity>
-        <Text style={authStyles.help}>Demo: student@example.com · password123</Text>
-      </View>
+    <View style={authStyles.loginScreen}>
+      <View pointerEvents="none" style={authStyles.loginGlow} />
+      <ScrollView contentContainerStyle={authStyles.loginScroll} keyboardShouldPersistTaps="handled">
+        <View style={authStyles.brandRow}>
+          <View style={authStyles.brandIcon}><Text style={authStyles.brandIconText}>C</Text></View>
+          <View style={authStyles.brandCopy}>
+            <Text style={authStyles.brandTitle}>CCE 106</Text>
+            <Text style={authStyles.brandSubtitle}>STUDENT PORTAL</Text>
+          </View>
+          <View style={authStyles.secureBadge}><View style={authStyles.secureDot} /><Text style={authStyles.secureText}>SECURE</Text></View>
+        </View>
+
+        <View style={authStyles.loginIntro}>
+          <Text style={authStyles.eyebrow}>WELCOME BACK</Text>
+          <Text style={authStyles.title}>Student Login</Text>
+          <Text style={authStyles.introText}>Sign in to continue to your dashboard.</Text>
+        </View>
+
+        <View style={authStyles.card}>
+          <Text style={authStyles.fieldLabel}>USERNAME</Text>
+          <View style={authStyles.inputShell}>
+            <MaterialIcons name="person-outline" size={21} color="#708396" />
+            <TextInput style={authStyles.input} placeholder="Enter your username" placeholderTextColor="#94A3B1" value={username} onChangeText={setUsername} autoCapitalize="none" autoComplete="username" editable={!loading && readyForLogin} returnKeyType="next" />
+          </View>
+
+          <Text style={[authStyles.fieldLabel, authStyles.passwordLabel]}>PASSWORD</Text>
+          <View style={authStyles.inputShell}>
+            <MaterialIcons name="lock-outline" size={20} color="#708396" />
+            <TextInput style={authStyles.input} placeholder="Enter your password" placeholderTextColor="#94A3B1" value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} autoComplete="password" editable={!loading && readyForLogin} onSubmitEditing={login} returnKeyType="go" />
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'} onPress={() => setIsPasswordVisible(current => !current)} style={authStyles.eyeButton}>
+              <MaterialIcons name={isPasswordVisible ? 'visibility-off' : 'visibility'} size={22} color="#708396" />
+            </TouchableOpacity>
+          </View>
+
+          {!!error && <Text style={authStyles.error}>{error}</Text>}
+          <TouchableOpacity style={[authStyles.button, (loading || !readyForLogin) && { opacity: 0.7 }]} onPress={login} disabled={loading || !readyForLogin}>
+            {loading ? <ActivityIndicator color="#fff" /> : <><Text style={authStyles.buttonText}>{readyForLogin ? 'SIGN IN' : 'LOADING...'}</Text>{readyForLogin && <MaterialIcons name="arrow-forward" size={20} color="#fff" />}</>}
+          </TouchableOpacity>
+
+          {savedToken && (
+            <>
+              <View style={authStyles.separator}><View style={authStyles.separatorLine} /><Text style={authStyles.separatorText}>OR RESTORE SAVED SESSION</Text><View style={authStyles.separatorLine} /></View>
+              <TouchableOpacity accessibilityRole="button" style={[authStyles.demoButton, authStyles.restoreButton]} onPress={() => void continueSavedSession()} disabled={loading || !readyForLogin}>
+                {loading ? <ActivityIndicator color="#087E8B" /> : <><MaterialIcons name="lock-open" size={18} color="#087E8B" /><Text style={authStyles.demoButtonText}>Continue saved session</Text></>}
+              </TouchableOpacity>
+            </>
+          )}
+
+          <View style={authStyles.separator}><View style={authStyles.separatorLine} /><Text style={authStyles.separatorText}>OR USE A TEST ACCOUNT</Text><View style={authStyles.separatorLine} /></View>
+          <TouchableOpacity accessibilityRole="button" style={[authStyles.demoButton, !readyForLogin && { opacity: 0.6 }]} disabled={!readyForLogin} onPress={() => { setUsername('emilys'); setPassword('emilyspass'); setError(''); }}>
+            <MaterialIcons name="bolt" size={18} color="#087E8B" />
+            <Text style={authStyles.demoButtonText}>Fill test account</Text>
+          </TouchableOpacity>
+          <Text style={authStyles.demoHint}>Fills the username and password for you.</Text>
+        </View>
+
+        <View style={authStyles.loginFooter}>
+          <Text style={authStyles.footerText}>CCE106 {'\u00B7'} REACT NATIVE</Text>
+          <Text style={authStyles.footerSecure}>ENCRYPTED SESSION</Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
+const dashboardStyles = StyleSheet.create({
+  dashboard: { flex: 1, backgroundColor: '#F1F7F8', overflow: 'hidden' },
+  dashboardGlow: { position: 'absolute', width: 360, height: 360, borderRadius: 190, right: -150, top: -185, backgroundColor: '#D8F1EF' },
+  dashboardContent: { flexGrow: 1, paddingHorizontal: 26, paddingTop: 38, paddingBottom: 26 },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  brandIcon: { width: 62, height: 62, borderRadius: 18, backgroundColor: '#078A91', alignItems: 'center', justifyContent: 'center', shadowColor: '#056F77', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  brandIconText: { color: '#FFFFFF', fontSize: 36, fontWeight: '900' },
+  brandCopy: { flex: 1, marginLeft: 15 },
+  brandTitle: { color: '#132A46', fontSize: 26, fontWeight: '900', letterSpacing: 1.3 },
+  brandSubtitle: { color: '#718294', fontSize: 11, fontWeight: '800', letterSpacing: 2.2, marginTop: 3 },
+  secureBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#E0F3EF', paddingHorizontal: 15, paddingVertical: 11, borderRadius: 24 },
+  secureDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#169A70' },
+  secureText: { color: '#1B7564', fontSize: 11, fontWeight: '900', letterSpacing: 1.3 },
+  welcomeBlock: { marginTop: 72 },
+  eyebrow: { color: '#087E8B', fontSize: 14, fontWeight: '900', letterSpacing: 2.2 },
+  welcomeTitle: { color: '#132A46', fontSize: 44, lineHeight: 51, fontWeight: '900', marginTop: 8 },
+  welcomeSubtitle: { color: '#778899', fontSize: 17, lineHeight: 26, marginTop: 10 },
+  sessionCard: { flexDirection: 'row', alignItems: 'center', gap: 15, backgroundColor: '#E3F3F0', borderRadius: 18, padding: 18, marginTop: 30 },
+  sessionIcon: { width: 54, height: 54, borderRadius: 16, backgroundColor: '#CDEBE4', alignItems: 'center', justifyContent: 'center' },
+  sessionCopy: { flex: 1 },
+  sessionTitle: { color: '#16735F', fontSize: 17, fontWeight: '800' },
+  sessionDescription: { color: '#718C86', fontSize: 13, lineHeight: 20, marginTop: 4 },
+  sessionDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#17A77A' },
+  profileCard: { backgroundColor: '#FFFFFF', borderRadius: 22, borderWidth: 1, borderColor: '#E0E9EC', padding: 23, marginTop: 24, shadowColor: '#1B3347', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  profileCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardEyebrow: { color: '#087E8B', fontSize: 13, fontWeight: '900', letterSpacing: 2 },
+  studentPill: { backgroundColor: '#E8F5F3', borderRadius: 22, paddingHorizontal: 15, paddingVertical: 9 },
+  studentPillText: { color: '#177E72', fontSize: 11, fontWeight: '900', letterSpacing: 1.1 },
+  nameBlock: { marginTop: 34 },
+  studentName: { color: '#152A44', fontSize: 32, fontWeight: '900' },
+  studentEmail: { color: '#7A8996', fontSize: 17, marginTop: 5 },
+  divider: { height: 1, backgroundColor: '#E1E8EB', marginVertical: 24 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  rowCopy: { flex: 1 },
+  rowLabel: { color: '#81909D', fontSize: 11, fontWeight: '900', letterSpacing: 1.8 },
+  rowValue: { color: '#1D344D', fontSize: 18, fontWeight: '600', marginTop: 7 },
+  rowIcon: { width: 54, height: 54, borderRadius: 14, backgroundColor: '#F0F5F7', alignItems: 'center', justifyContent: 'center', marginLeft: 15 },
+  signOutButton: { minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE5E9', borderRadius: 15, marginTop: 24 },
+  signOutText: { color: '#526779', fontSize: 13, fontWeight: '900', letterSpacing: 2 },
+  statusDemoButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 6 },
+  statusDemoButton: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  unauthorizedButton: { borderColor: '#F0D2D5', backgroundColor: '#FFF5F6' },
+  forbiddenButton: { borderColor: '#EBD5C9', backgroundColor: '#FFF8F4' },
+  statusDemoText: { fontSize: 12, fontWeight: '800' },
+  unauthorizedText: { color: '#A33F4A' },
+  forbiddenText: { color: '#985238' },
+  savedSession: { color: '#82909A', fontSize: 13, textAlign: 'center', marginTop: 16 },
+});
+
+const styles = dashboardStyles;
+
 const authStyles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f3f7fb' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14, padding: 24, backgroundColor: '#F1F7F8' },
   protected: { flex: 1 },
-  card: { padding: 24, borderRadius: 18, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d9e3ed' },
-  eyebrow: { color: '#087e8b', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8 },
-  title: { color: '#17324d', fontSize: 28, fontWeight: '700', marginBottom: 8 },
-  help: { color: '#5b6b7a', marginTop: 12, marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#cbd6e2', borderRadius: 10, padding: 12, marginTop: 10, color: '#17324d' },
-  error: { color: '#b42318', marginTop: 8 },
-  button: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 14, borderRadius: 10, backgroundColor: '#087e8b' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  logout: { position: 'absolute', top: 48, right: 16, zIndex: 100, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: '#087e8b' },
-  logoutText: { color: '#fff', fontWeight: '700' },
+  restoreText: { color: '#637789', fontSize: 14 },
+  loginScreen: { flex: 1, backgroundColor: '#F1F7F8', overflow: 'hidden' },
+  loginGlow: { position: 'absolute', width: 330, height: 330, borderRadius: 180, right: -130, top: -180, backgroundColor: '#D7F0EE' },
+  loginScroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingTop: 34, paddingBottom: 22 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 50 },
+  brandIcon: { width: 58, height: 58, borderRadius: 17, backgroundColor: '#078A91', alignItems: 'center', justifyContent: 'center', shadowColor: '#056F77', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  brandIconText: { color: '#FFFFFF', fontSize: 34, fontWeight: '900' },
+  brandCopy: { marginLeft: 14, flex: 1 },
+  brandTitle: { color: '#132A46', fontSize: 23, fontWeight: '900', letterSpacing: 1.4 },
+  brandSubtitle: { color: '#728294', fontSize: 10, fontWeight: '800', letterSpacing: 2.2, marginTop: 3 },
+  secureBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DFF3EF', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 24, gap: 7 },
+  secureDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#169A70' },
+  secureText: { color: '#1A7564', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  loginIntro: { marginBottom: 22 },
+  eyebrow: { color: '#087E8B', fontSize: 11, fontWeight: '900', letterSpacing: 2, marginBottom: 8 },
+  title: { color: '#132A46', fontSize: 36, lineHeight: 43, fontWeight: '900', marginBottom: 7 },
+  introText: { color: '#718092', fontSize: 15 },
+  card: { padding: 22, borderRadius: 22, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E9EC', shadowColor: '#1B3347', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
+  fieldLabel: { color: '#53677A', fontSize: 10, fontWeight: '900', letterSpacing: 1.8, marginBottom: 9 },
+  passwordLabel: { marginTop: 19 },
+  inputShell: { minHeight: 54, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#D9E3E7', borderRadius: 13, backgroundColor: '#FAFCFD', paddingHorizontal: 14 },
+  input: { flex: 1, color: '#193149', fontSize: 15, paddingVertical: 13, paddingHorizontal: 11 },
+  eyeButton: { padding: 5 },
+  error: { color: '#B42318', fontSize: 13, lineHeight: 19, marginTop: 11 },
+  button: { flexDirection: 'row', gap: 10, minHeight: 54, alignItems: 'center', justifyContent: 'center', marginTop: 22, borderRadius: 13, backgroundColor: '#132A46' },
+  buttonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
+  separator: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 23 },
+  separatorLine: { flex: 1, height: 1, backgroundColor: '#E6ECEF' },
+  separatorText: { color: '#9AA7B1', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  demoButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, backgroundColor: '#E7F5F3', marginTop: 16 },
+  restoreButton: { backgroundColor: '#F0F6F8' },
+  demoButtonText: { color: '#087E8B', fontSize: 14, fontWeight: '800' },
+  demoHint: { color: '#8796A2', fontSize: 11, textAlign: 'center', marginTop: 8 },
+  loginFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 28 },
+  footerText: { color: '#8796A2', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  footerSecure: { color: '#528579', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
 });
