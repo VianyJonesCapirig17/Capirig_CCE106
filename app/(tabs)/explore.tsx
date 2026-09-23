@@ -1,112 +1,145 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+﻿import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+type Quote = { text: string; author: string };
+type ApiQuote = { q?: unknown; a?: unknown };
 
-export default function TabTwoScreen() {
+async function fetchRandomQuote(): Promise<Quote> {
+  const response = await fetch('https://zenquotes.io/api/random');
+  if (!response.ok) throw new Error('The quote service is unavailable. Please try again.');
+
+  const data: unknown = await response.json();
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('The quote service returned an invalid response.');
+  }
+
+  const item = data[0] as ApiQuote;
+  if (typeof item.q !== 'string' || typeof item.a !== 'string' || !item.q.trim() || !item.a.trim()) {
+    throw new Error('The quote service returned an invalid quote.');
+  }
+  return { text: item.q.trim(), author: item.a.trim() };
+}
+
+const features = [
+  'Fetch one quote',
+  'Show author and quote',
+  'Loading indicator',
+  'Error message',
+  'New Quote button',
+];
+
+export default function QuotesScreen() {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 850;
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadQuote = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setQuote(await fetchRandomQuote());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load a quote. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void loadQuote(); }, [loadQuote]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.eyebrow}>BEGINNER PROJECT</Text>
+      <Text style={[styles.pageTitle, !isWide && styles.pageTitleSmall]}>
+        Mini project option 1: Quotes App
+      </Text>
+
+      <View style={[styles.main, isWide && styles.mainWide]}>
+        <View style={[styles.quoteCard, isWide && styles.quoteCardWide]}>
+          <Text style={styles.quoteLabel}>QUOTE OF THE DAY</Text>
+          {loading && !quote ? (
+            <View style={styles.messageArea}>
+              <ActivityIndicator size="large" color="#12a6c8" />
+              <Text style={styles.messageText}>Loading a quote…</Text>
+            </View>
+          ) : quote ? (
+            <View style={styles.quoteContent}>
+              <Text style={styles.quoteText}>“{quote.text}”</Text>
+              <Text style={styles.author}>— {quote.author}</Text>
+            </View>
+          ) : (
+            <View style={styles.messageArea}>
+              <Text style={styles.errorText}>{error || 'No quote is available.'}</Text>
+            </View>
+          )}
+          {!!error && !!quote && <Text style={styles.inlineError}>{error}</Text>}
+          <TouchableOpacity
+            accessibilityRole="button"
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={loadQuote}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>NEW QUOTE</Text>}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.featureList}>
+          {features.map((feature) => (
+            <View key={feature} style={styles.featureRow}>
+              <View style={styles.bullet} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={() => Linking.openURL('https://zenquotes.io/')}>
+          <Text style={styles.attribution}>Quotes provided by ZenQuotes</Text>
+        </TouchableOpacity>
+        <Text style={styles.footerText}>CCE106 · React Native</Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  screen: { flex: 1, backgroundColor: '#e7f2f5' },
+  content: { flexGrow: 1, paddingHorizontal: '6%', paddingTop: 26, paddingBottom: 20 },
+  eyebrow: { color: '#168b9a', fontSize: 13, fontWeight: '800', letterSpacing: 1.2, marginBottom: 18 },
+  pageTitle: { color: '#122d57', fontSize: 42, lineHeight: 50, fontWeight: '800', marginBottom: 34 },
+  pageTitleSmall: { fontSize: 29, lineHeight: 36 },
+  main: { gap: 28 },
+  mainWide: { flexDirection: 'row', alignItems: 'center', gap: '6%' },
+  quoteCard: { minHeight: 420, borderRadius: 22, backgroundColor: '#082c68', padding: 30, alignItems: 'center', justifyContent: 'space-between' },
+  quoteCardWide: { width: '47%' },
+  quoteLabel: { color: '#11b1c7', fontSize: 19, fontWeight: '800', letterSpacing: 0.6, textAlign: 'center' },
+  quoteContent: { flex: 1, justifyContent: 'center', paddingVertical: 26 },
+  quoteText: { color: '#e8f1f5', fontSize: 27, lineHeight: 35, fontWeight: '700', textAlign: 'center' },
+  author: { color: '#e3d878', fontSize: 19, marginTop: 24, textAlign: 'center' },
+  messageArea: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 28 },
+  messageText: { color: '#e8f1f5', marginTop: 14, fontSize: 16 },
+  errorText: { color: '#ffd2d2', fontSize: 16, textAlign: 'center' },
+  inlineError: { color: '#ffd2d2', fontSize: 14, textAlign: 'center', marginBottom: 12 },
+  button: { width: '65%', minHeight: 48, borderRadius: 26, backgroundColor: '#10a6c8', alignItems: 'center', justifyContent: 'center' },
+  buttonDisabled: { opacity: 0.75 },
+  buttonText: { color: '#e8f1f5', fontSize: 16, fontWeight: '800', letterSpacing: 0.4 },
+  featureList: { flex: 1, justifyContent: 'space-evenly', paddingVertical: 12 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 24, marginVertical: 13 },
+  bullet: { width: 17, height: 17, borderRadius: 9, backgroundColor: '#119fc1' },
+  featureText: { flex: 1, color: '#17253d', fontSize: 22 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', marginTop: 'auto', paddingTop: 30 },
+  attribution: { color: '#168b9a', fontSize: 11 },
+  footerText: { color: '#75848b', fontSize: 11 },
 });

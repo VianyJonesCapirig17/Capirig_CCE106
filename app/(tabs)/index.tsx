@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 type Task = {
   id: number;
@@ -50,7 +52,7 @@ function MetricCard({
   );
 }
 
-export default function DashboardScreen() {
+function DashboardContent() {
   const { width } = useWindowDimensions();
   const isWide = width >= 600;
 
@@ -694,4 +696,151 @@ const styles = StyleSheet.create({
     color: COLORS.lightGray,
     fontSize: 14,
   },
+});
+
+const SESSION_KEY = 'student_portal_token';
+
+type LoginResponse = {
+  token?: unknown;
+  accessToken?: unknown;
+  access_token?: unknown;
+};
+
+function getTokenFromResponse(response: LoginResponse): string {
+  // Use the field your backend actually returns. These common names are supported here.
+  const value = response.access_token ?? response.accessToken ?? response.token;
+  if (typeof value !== 'string' || value.trim().length === 0 || value === 'undefined') {
+    throw new Error('Login succeeded, but the response did not contain a valid token.');
+  }
+  return value.trim();
+}
+
+export default function DashboardScreen() {
+  const [sessionStatus, setSessionStatus] = useState<'restoring' | 'signed-out' | 'signed-in'>('restoring');
+  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    async function restoreSession() {
+      try {
+        const savedToken = await SecureStore.getItemAsync(SESSION_KEY);
+        const validToken = savedToken?.trim();
+        if (!mounted) return;
+        if (validToken && validToken !== 'undefined') {
+          setToken(validToken);
+          setSessionStatus('signed-in');
+        } else {
+          setSessionStatus('signed-out');
+        }
+      } catch {
+        if (mounted) {
+          setError('Could not restore your session. Please log in again.');
+          setSessionStatus('signed-out');
+        }
+      }
+    }
+    restoreSession();
+    return () => { mounted = false; };
+  }, []);
+
+  async function login() {
+    setError('');
+    if (!email.trim() || !password) {
+      setError('Enter your email and password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Demo credentials; replace this check with your backend login request.
+      await new Promise(resolve => setTimeout(resolve, 700));
+      if (email.trim().toLowerCase() !== 'student@example.com' || password !== 'password123') {
+        throw new Error('Invalid email or password.');
+      }
+      // Mimics a server response. Change access_token to your API's actual field name.
+      const response: LoginResponse = { access_token: 'demo-student-token' };
+      const newToken = getTokenFromResponse(response);
+      await SecureStore.setItemAsync(SESSION_KEY, newToken);
+      setToken(newToken);
+      setSessionStatus('signed-in');
+      setPassword('');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function logout() {
+    try {
+      await SecureStore.deleteItemAsync(SESSION_KEY);
+    } finally {
+      // Always clear the in-memory session, even if secure storage reports an error.
+      setToken(null);
+      setSessionStatus('signed-out');
+      setEmail('');
+      setPassword('');
+      setError('');
+    }
+  }
+
+  async function authorizedFetch(url: string, options: RequestInit = {}) {
+    if (!token) throw new Error('No session token is available.');
+    const headers = new Headers(options.headers);
+    headers.set('Authorization', `Bearer ${token}`);
+    const response = await fetch(url, { ...options, headers });
+    if (response.status === 401) {
+      await logout();
+      throw new Error('Your session expired. Please log in again.');
+    }
+    return response;
+  }
+
+  // Use authorizedFetch for protected API calls, for example:
+  // const response = await authorizedFetch(`${API_URL}/profile`);
+  void authorizedFetch;
+
+  if (sessionStatus === 'restoring') {
+    return <View style={authStyles.center}><ActivityIndicator size="large" color="#087e8b" /><Text style={authStyles.help}>Restoring session…</Text></View>;
+  }
+
+  if (token) {
+    return <View style={authStyles.protected}><DashboardContent /><TouchableOpacity style={authStyles.logout} onPress={logout}><Text style={authStyles.logoutText}>Log out</Text></TouchableOpacity></View>;
+  }
+
+  return (
+    <View style={authStyles.center}>
+      <View style={authStyles.card}>
+        <Text style={authStyles.eyebrow}>STUDENT PORTAL</Text>
+        <Text style={authStyles.title}>Log in</Text>
+        <Text style={authStyles.help}>Sign in to view your protected dashboard.</Text>
+        <TextInput style={authStyles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!loading} />
+        <TextInput style={authStyles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" editable={!loading} onSubmitEditing={login} />
+        {!!error && <Text style={authStyles.error}>{error}</Text>}
+        <TouchableOpacity style={[authStyles.button, loading && { opacity: 0.7 }]} onPress={login} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={authStyles.buttonText}>Log in</Text>}
+        </TouchableOpacity>
+        <Text style={authStyles.help}>Demo: student@example.com · password123</Text>
+      </View>
+    </View>
+  );
+}
+
+const authStyles = StyleSheet.create({
+  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f3f7fb' },
+  protected: { flex: 1 },
+  card: { padding: 24, borderRadius: 18, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d9e3ed' },
+  eyebrow: { color: '#087e8b', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8 },
+  title: { color: '#17324d', fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  help: { color: '#5b6b7a', marginTop: 12, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#cbd6e2', borderRadius: 10, padding: 12, marginTop: 10, color: '#17324d' },
+  error: { color: '#b42318', marginTop: 8 },
+  button: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 14, borderRadius: 10, backgroundColor: '#087e8b' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  logout: { position: 'absolute', top: 48, right: 16, zIndex: 100, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: '#087e8b' },
+  logoutText: { color: '#fff', fontWeight: '700' },
 });
