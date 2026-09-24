@@ -1,0 +1,14 @@
+Short Reflection
+
+Why SecureStore is more appropriate than plain-text storage for an access token:
+
+Plain-text storage keeps your access token unencrypted in local files or standard storage, which leaves it vulnerable to malware, device inspection, or security breaches. 
+SecureStore uses hardware-backed encryption like iOS Keychain or Android Keystore to lock the token safely at rest, ensuring that only your authenticated app can decrypt and use it.
+
+What is the purpose of the Authorization header:
+The Authorization header passes credentials typically a Bearer token from the client to the server in HTTP requests. 
+It tells the server who is making the request and proves they have the required permissions to access protected resources without forcing the user to log in repeatedly.
+
+What the app should do when a stored token is expired or rejected:
+When a token is rejected or returns a 401 Unauthorized status, the app should first attempt to silently exchange a refresh token for a new access token in the background. 
+If the refresh fails or isn't supported, the app must safely clear the invalid token from SecureStore and redirect the user to the login screen to re-authenticate.
